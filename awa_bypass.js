@@ -1,4 +1,5 @@
 //v2. Now works with prechat queue and won't send to all logged in agents regardless of channel/queue/assignment group
+//pair with secondary before insert business rule, non scripted to set origina awa work item to cancelled to prevent duplicates 
 
 (function executeRule(current, previous /*null when async*/) {
 
