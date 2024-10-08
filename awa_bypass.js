@@ -1,12 +1,32 @@
-//before insert BR on awa_work_item_table
-//v1. in the process of fixing duplicate send to first agent
-//confirmed functionality with prechat survey
+//v2. Now works with prechat queue and won't send to all logged in agents regardless of channel/queue/assignment group
 
 (function executeRule(current, previous /*null when async*/) {
 
     if (!current.isNewRecord()) {
         return;
     }
+
+    // Get the queue from the current record
+    var queueId = current.getValue('queue');
+
+    // Lookup the awa_eligibility_pool record for the queue
+    var eligibilityPool = new GlideRecord('awa_eligibility_pool');
+    eligibilityPool.addQuery('queue', queueId);
+    eligibilityPool.setLimit(1);
+    eligibilityPool.query();
+
+    if (!eligibilityPool.next()) {
+        return; // No matching eligibility pool found for the queue
+    }
+
+    // Get the groups from the list collector field
+    var groups = eligibilityPool.getValue('groups');
+    if (!groups) {
+        return; // No groups defined in the eligibility pool
+    }
+
+    // Split the groups into an array
+    var groupList = groups.split(',');
 
     var agentPresenceCapacity = new GlideRecord('awa_agent_presence_capacity');
     agentPresenceCapacity.addQuery('aca_service_channel', '27f675e3739713004a905ee515f6a7c3');
@@ -20,6 +40,22 @@
 
         if (processedAgents[agentId]) {
             continue;
+        }
+
+        // Check if the agent is a member of one of the groups
+        var agentInGroup = false;
+        var agentGroups = new GlideRecord('sys_user_grmember');
+        agentGroups.addQuery('user', agentId);
+        agentGroups.addQuery('group', 'IN', groupList);
+        agentGroups.setLimit(1);
+        agentGroups.query();
+
+        if (agentGroups.hasNext()) {
+            agentInGroup = true;
+        }
+
+        if (!agentInGroup) {
+            continue; // Skip agents not in the required groups
         }
 
         var existingWorkItem = new GlideRecord('awa_work_item');
