@@ -1,4 +1,4 @@
-//v2. Now works with prechat queue and won't send to all logged in agents regardless of channel/queue/assignment group
+//v3. Now works with prechat queue and won't send to all logged in agents regardless of channel/queue/assignment group
 //pair with secondary before insert business rule, non scripted to set origina awa work item to cancelled to prevent duplicates 
 
 (function executeRule(current, previous /*null when async*/) {
@@ -30,8 +30,9 @@
     var groupList = groups.split(',');
 
     var agentPresenceCapacity = new GlideRecord('awa_agent_presence_capacity');
-    agentPresenceCapacity.addQuery('aca_service_channel', '27f675e3739713004a905ee515f6a7c3');
+    agentPresenceCapacity.addQuery('ac_channel', '27f675e3739713004a905ee515f6a7c3');
     agentPresenceCapacity.addQuery('ap_current_presence_state', '0b10223c57a313005baaaa65ef94f970');
+	agentPresenceCapacity.addQuery('aca_available', 'true');
     agentPresenceCapacity.query();
 
     var processedAgents = {};
@@ -81,6 +82,8 @@
         newWorkItem.setValue('state_changed_on', current.state_changed_on);
         newWorkItem.setValue('offered_on', current.offered_on);
         newWorkItem.setValue('assigned_to', agentId);
+		newWorkItem.setValue('active', true);
+		newWorkItem.setValue('u_created_by_script', true);
 
         newWorkItem.insert();
 
